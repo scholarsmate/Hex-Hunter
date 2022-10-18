@@ -1,6 +1,15 @@
 import secrets
 import sys
 
+__all__ = [
+    "crc16",
+    "gen_random_data",
+    "verify_data",
+    "is_hex_char",
+    "is_hex_char_upper",
+    "is_hex_char_lower",
+]
+
 CSUM_ENDIANESS = sys.byteorder
 
 
@@ -36,14 +45,28 @@ def verify_data(data: bytes):
     return data[-2:] == crc16(data[:-2], 0, len(data) - 2).to_bytes(2, CSUM_ENDIANESS)
 
 
-def is_hex(b: bytes) -> bool:
+def is_hex_char(b: bytes) -> bool:
     return b in "0123456789abcdefABCDEF".encode("utf-8")
 
 
-def is_hex_upper(b: bytes) -> bool:
+def is_hex_char_upper(b: bytes) -> bool:
     return b in "0123456789ABCDEF".encode("utf-8")
 
 
-def is_hex_lower(b: bytes) -> bool:
+def is_hex_char_lower(b: bytes) -> bool:
     return b in "0123456789abcdef".encode("utf-8")
 
+
+def is_base64_char(b: bytes) -> bool:
+    return (
+        b
+        #   00000000011111111112222222222333333333344444444445555555555666666
+        #   12345678901234567890123456789012345678901234567890123456789012345
+        in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=".encode(
+            "utf-8"
+        )
+    )
+
+
+def encode_hex(b: bytes) -> bytes:
+    return b.hex().encode("utf-8")

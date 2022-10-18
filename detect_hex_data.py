@@ -12,7 +12,7 @@ def main():
             break
         for b in buffer:
             b = b.to_bytes(1, sys.byteorder)  # byte order doesn't matter for 1 byte
-            if hex_hunter.is_hex_lower(b):
+            if hex_hunter.is_hex_char_lower(b):
                 hex_string += b
             else:
                 while len(hex_string) > threshold:
@@ -24,7 +24,9 @@ def main():
                                 f'data[{found}] ({len(data)}): {hex_string.decode("utf-8")}'
                             )
                         else:
-                            print(f"**FAILED ({len(data)}): {hex_string.decode('utf-8')}")
+                            print(
+                                f"**FAILED ({len(data)}): {hex_string.decode('utf-8')}"
+                            )
                     except ValueError as e:
                         print(f"**ERROR {e}: {hex_string.decode('utf-8')}")
                         hex_string = hex_string[:-1]
