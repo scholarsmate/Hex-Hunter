@@ -4,4 +4,7 @@
 </p>
 
 # Hex-Hunter
-Finds encoded data
+
+</div>
+
+Finds encoded data.
