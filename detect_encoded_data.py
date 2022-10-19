@@ -3,6 +3,7 @@ detect encoded data
 """
 import base64
 import binascii
+import json
 import sys
 from typing import IO
 
@@ -65,7 +66,7 @@ def find_base64_encoded_data(config: dict, input_file: IO) -> int:
     found = 0
     encoded_string = bytes()
     while True:
-        read_buffer = input_file.buffer.read(1024 * 8)
+        read_buffer = input_file.read(1024 * 8)
         if not read_buffer:
             break
         for byte in read_buffer:
@@ -103,12 +104,9 @@ def detect_encoded_data(config: dict):
 
 def main():
     """main"""
-    config = {
-        "threshold": 10,
-        "encoding": "base64",
-        "input_filename": None,  # "-" or None for stdin, any other string for a filename
-    }
-    sys.exit(detect_encoded_data(config))
+    with open("settings.json", "r", encoding="utf-8") as config_file:
+        config = json.load(config_file)
+        sys.exit(detect_encoded_data(config))
 
 
 if __name__ == "__main__":

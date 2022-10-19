@@ -1,7 +1,7 @@
 """
 generate test data
 """
-
+import json
 import secrets
 import sys
 from base64 import b64encode
@@ -28,7 +28,7 @@ def encode(data: bytes, encoding: str, answer_file: IO) -> bytes:
 def gen_rand_hex_data_helper(config: dict, output_file: IO, answer_file: IO):
     """generate random hex data helper"""
     for _ in range(0, config["num_encoded_sequences"]):
-        output_file.buffer.write(
+        output_file.write(
             secrets.token_bytes(
                 secrets.choice(
                     range(
@@ -48,10 +48,10 @@ def gen_rand_hex_data_helper(config: dict, output_file: IO, answer_file: IO):
         )
         if not hex_hunter.verify_data(embedded_data):
             return -1
-        output_file.buffer.write(encode(embedded_data, config["encoding"], answer_file))
+        output_file.write(encode(embedded_data, config["encoding"], answer_file))
         output_file.flush()
 
-    output_file.buffer.write(
+    output_file.write(
         secrets.token_bytes(
             secrets.choice(
                 range(
@@ -76,15 +76,9 @@ def gen_data(config: dict):
 
 def main():
     """main"""
-    config: dict = {
-        "encoding": "base64",  # "hex" or "base64"
-        "random_sequence": {"length_min": 4, "length_max": 1024},
-        "random_encoded_sequence": {"length_min": 8, "length_max": 1024},
-        "num_encoded_sequences": 1000,
-        "answer_filename": "answer_key",
-        "output_filename": None,  # "-" or None for stdout, any other string for a filename
-    }
-    sys.exit(gen_data(config))
+    with open("settings.json", "r", encoding="utf-8") as config_file:
+        config = json.load(config_file)
+        sys.exit(gen_data(config))
 
 
 if __name__ == "__main__":
