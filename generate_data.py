@@ -9,12 +9,12 @@ import hex_hunter
 def encode(data: bytes, encoding: str, answer_file: IO) -> bytes:
     if encoding == "hex":
         enc = hex_hunter.encode_hex(data)
-        answer_file.write(enc.decode('utf-8'))
+        answer_file.write(enc.decode("utf-8"))
         answer_file.write("\n")
         return enc
     elif encoding == "base64":
         enc = b64encode(data)
-        answer_file.write(enc.decode('utf-8'))
+        answer_file.write(enc.decode("utf-8"))
         answer_file.write("\n")
         return enc
     else:

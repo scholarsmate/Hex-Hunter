@@ -8,6 +8,8 @@ __all__ = [
     "is_hex_char",
     "is_hex_char_upper",
     "is_hex_char_lower",
+    "is_base64_char",
+    "encode_hex",
 ]
 
 CSUM_ENDIANESS = sys.byteorder
