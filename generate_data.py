@@ -15,12 +15,12 @@ def encode(data: bytes, encoding: str, answer_file: IO) -> bytes:
     if encoding == "hex":
         enc = hex_hunter.encode_hex(data)
         answer_file.write(enc)
-        answer_file.write("\n".encode('utf-8'))
+        answer_file.write("\n".encode("utf-8"))
         return enc
     if encoding == "base64":
         enc = b64encode(data)
         answer_file.write(enc)
-        answer_file.write("\n".encode('utf-8'))
+        answer_file.write("\n".encode("utf-8"))
         return enc
     raise ValueError
 
@@ -77,7 +77,7 @@ def gen_data(config: dict):
 def main():
     """main"""
     config: dict = {
-        "encoding": "hex",  # "hex" or "base64"
+        "encoding": "base64",  # "hex" or "base64"
         "random_sequence": {"length_min": 4, "length_max": 1024},
         "random_encoded_sequence": {"length_min": 8, "length_max": 1024},
         "num_encoded_sequences": 1000,
