@@ -88,13 +88,7 @@ def find_base64_encoded_data(config: dict, input_file: IO) -> int:
 
 def detect_encoded_data(config: dict):
     """detect encoded data"""
-    if config["input_filename"] is None or config["input_filename"] == "-":
-        if config["encoding"] == "hex":
-            return find_hex_encoded_data(config, sys.stdin)
-        if config["encoding"] == "base64":
-            return find_base64_encoded_data(config, sys.stdin)
-        raise ValueError
-    with open(config["input_filename"], "rb") as input_file:
+    with hex_hunter.smart_open(config["input_filename"], "rb") as input_file:
         if config["encoding"] == "hex":
             return find_hex_encoded_data(config, input_file)
         if config["encoding"] == "base64":

@@ -68,9 +68,7 @@ def gen_rand_hex_data_helper(config: dict, output_file: IO, answer_file: IO):
 def gen_data(config: dict):
     """generate test data"""
     with open(config["answer_filename"], "wb") as answer_file:
-        if config["output_filename"] is None or config["output_filename"] == "-":
-            return gen_rand_hex_data_helper(config, sys.stdout, answer_file)
-        with open(config["output_filename"], "wb") as output_file:
+        with hex_hunter.smart_open(config["output_filename"], "wb") as output_file:
             return gen_rand_hex_data_helper(config, output_file, answer_file)
 
 

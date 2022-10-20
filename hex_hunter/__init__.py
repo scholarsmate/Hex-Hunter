@@ -1,7 +1,7 @@
 """
 hex_hunter module
 """
-
+from contextlib import contextmanager
 import secrets
 import sys
 
@@ -17,6 +17,28 @@ __all__ = [
 ]
 
 CSUM_ENDIANESS = sys.byteorder
+
+
+@contextmanager
+def smart_open(filename, mode="rb"):
+    """opens the given filename, if "-" will be stdin or stdout depending on the mode"""
+    if filename == "-":
+        if mode is None or mode == "" or "r" in mode:
+            file_handle = sys.stdin.buffer if "b" in mode else sys.stdin
+        else:
+            file_handle = sys.stdout.buffer if "b" in mode else sys.stdout
+    else:
+        file_handle = (
+            # pylint: disable=unspecified-encoding
+            open(filename, mode)
+            if "b" in mode
+            else open(filename, mode, encoding="utf-8")
+        )
+    try:
+        yield file_handle
+    finally:
+        if filename != "-":
+            file_handle.close()
 
 
 def crc16(data: bytes, offset: int, length: int):
