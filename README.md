@@ -19,9 +19,9 @@ byte that is not in the legal range of the given encoding, or we have exhausted 
 </div>
 
 Once one of these two events happen, the string is evaluated against a series of encoding-specific criteria to determine
-if the string (or a subset thereof) is valid with respect to the given encoding format.  The encoded data could have
+if the string (or a slice thereof) is valid with respect to the given encoding format.  The encoded data could have
 encoding-legal bytes directly before and/or after the encoded data that will be part of the string being evaluated.  If
-possible, the evaluation will make a reasonable attempt to determine a valid subset of the given string.
+possible, the evaluation will make a reasonable attempt to determine a valid slice of the given string.
 
 ### Hex
 
