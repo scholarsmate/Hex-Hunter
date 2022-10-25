@@ -10,9 +10,9 @@
   <img alt="HexHunter General Algorithm Flow" src="https://raw.githubusercontent.com/scholarsmate/Hex-Hunter/main/images/HexHunter-GeneralFlow.png" width=600>
 </div>
 In general, the algorithm will evaluate the input stream byte by byte.  When it comes across a byte that is in the legal
-byte range for a given encoding, to we push that byte onto the end of an empty string.  As bytes continue to be in the
+byte range for a given encoding, it pushes that byte onto the end of an empty string.  As bytes continue to be in the
 legal range of the given encoding, bytes continue to be pushed onto the end of the string until either we evaluate a
-byte that is not in the legal range of the given encoding, or we have exhausted the input stream.
+byte that is not in the legal range of the given encoding, or the input stream is exhausted.
 
 <div align="center">
   <img alt="HexHunter General Validation Flow" src="https://raw.githubusercontent.com/scholarsmate/Hex-Hunter/main/images/HexHunter-GeneralValidation.png" width=600>

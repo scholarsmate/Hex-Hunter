@@ -1,0 +1,3 @@
+HexHunter (0x) - finds encoded data.
+
+This is some sample text used in HexHunter's test cases.
