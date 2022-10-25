@@ -1,20 +1,25 @@
 <div align="center">
   <p>
-    <img alt="Hex-Hunter Logo" src="https://raw.githubusercontent.com/scholarsmate/Hex-Hunter/main/images/Hex-Hunter.png" width=160>
+    <img alt="HexHunter Logo" src="https://raw.githubusercontent.com/scholarsmate/Hex-Hunter/main/images/HexHunter-Logo.png" width=160>
     <h1>Hex-Hunter<br/>find encoded data</h1>
   </p>
 </div>
 
 ## General Algorithm
 
+<img alt="HexHunter General Algorithm Flow" src="https://raw.githubusercontent.com/scholarsmate/Hex-Hunter/main/images/HexHunter-GeneralFlow.png" width=800>
+
 In general, the algorithm will evaluate the input stream byte by byte.  When it comes across a byte that is in the legal
 byte range for a given encoding, to we push that byte onto the end of an empty string.  As bytes continue to be in the
 legal range of the given encoding, bytes continue to be pushed onto the end of the string until either we evaluate a
-byte that is not in the legal range of the given encoding, or we have exhausted the input stream.  Once one of these two
-events happen, the string is evaluated against a series of encoding-specific criteria to determine if the string (or a
-subset thereof) is valid with respect to the given encoding format.  The encoded data could have encoding-legal bytes
-directly before and/or after the encoded data that will be part of the string being evaluated.  If possible, the
-evaluation will make a reasonable attempt to determine a valid subset of the given string.
+byte that is not in the legal range of the given encoding, or we have exhausted the input stream.
+
+<img alt="HexHunter General Validation Flow" src="https://raw.githubusercontent.com/scholarsmate/Hex-Hunter/main/images/HexHunter-GeneralValidation.png" width=800>
+
+Once one of these two events happen, the string is evaluated against a series of encoding-specific criteria to determine
+if the string (or a subset thereof) is valid with respect to the given encoding format.  The encoded data could have
+encoding-legal bytes directly before and/or after the encoded data that will be part of the string being evaluated.  If
+possible, the evaluation will make a reasonable attempt to determine a valid subset of the given string.
 
 ### Hex
 

@@ -41,7 +41,7 @@ def smart_open(filename, mode="rb"):
             file_handle.close()
 
 
-def crc16(data: bytes, offset: int, length: int):
+def crc16(data: bytes, offset: int, length: int, initial_value: int = 0xFFFF):
     """crc16 generates a 2-byte checksum"""
     if (
         data is None
@@ -50,7 +50,7 @@ def crc16(data: bytes, offset: int, length: int):
         or (offset + length) > len(data)
     ):
         raise ValueError
-    crc = 0xFFFF
+    crc = initial_value
     for i in range(0, length):
         crc ^= data[offset + i] << 8
         for _ in range(0, 8):
@@ -59,6 +59,30 @@ def crc16(data: bytes, offset: int, length: int):
             else:
                 crc = crc << 1
     return crc & 0xFFFF
+
+
+def crc8_atm(data: bytes, offset: int, length: int, initial_value: int = 0) -> int:
+    """crc8_atm generates a 1-byte checksum"""
+    if (
+        data is None
+        or offset < 0
+        or offset > (len(data) - 1)
+        or (offset + length) > len(data)
+    ):
+        raise ValueError
+    crc = initial_value
+    # Iterate bytes in data
+    for i in range(0, length):
+        byte = data[offset + i]
+        # Iterate bits in byte
+        for _ in range(0, 8):
+            if (crc >> 7) ^ (byte & 0x01):
+                crc = ((crc << 1) ^ 0x07) & 0xFF
+            else:
+                crc = (crc << 1) & 0xFF
+            # Shift to next bit
+            byte = byte >> 1
+    return crc
 
 
 def gen_random_data(nbytes: int) -> bytes:
