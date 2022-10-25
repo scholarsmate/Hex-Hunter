@@ -31,7 +31,11 @@ def validate_base64_string(encoded_string: bytes, threshold: int) -> bool:
                 return True
             break
         except binascii.Error:
-            encoded_string = encoded_string[:-1]
+            encoded_string = (
+                encoded_string[1:]
+                if encoded_string.endswith("=".encode("utf-8"))
+                else encoded_string[:-1]
+            )
             continue
     return False
 
