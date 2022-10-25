@@ -1,12 +1,8 @@
 <div align="center">
-<p>
+  <p>
     <img alt="Hex-Hunter Logo" src="https://raw.githubusercontent.com/scholarsmate/Hex-Hunter/main/images/Hex-Hunter.png" width=160>
-</p>
-
-## Hex-Hunter
-
-### Find encoded data
-
+    <h1>Hex-Hunter<br/>find encoded data</h1>
+  </p>
 </div>
 
 ## General Algorithm
@@ -27,17 +23,17 @@ The string evaluation then proceeds as follows:
 
 1. Does the string meet a configurable minimum length requirement?  If it does, proceed to step 2, else, the string is
 considered not valid.
-2. Can the string be hex-decoded (the string length should be even)?  If so, the string is considered valid, else, proceed
-to step 3.
+2. Can the string be hex-decoded (the string length should be even)?  If so, the string is considered valid, else,
+proceed to step 3.
 3. If the string cannot be decoded, pop off the last byte of the string and return to step 1.
 
 #### Additional Tuning
 
-1. **Case sensitivity** - Hex-legal bytes include the alphabetical characters `A`, `B`, `C`, `D`, `E`, and `F`, and are legal in upper and lower
-case.  In general an encoder will use either upper or lower case and won't mix cases.  For example an encoder would
-encode the binary `10101011` as either `AB` (upper case) or `ab` (lower case), but not `Ab` (mixed case) or `aB` (mixed
-case).  We can use this tuning to ensure that our strings only contain letters of the same case to further discriminate
-string membership.
+1. **Case sensitivity** - Hex-legal bytes include the alphabetical characters `A`, `B`, `C`, `D`, `E`, and `F`, and are
+legal in upper and lower case.  In general an encoder will use either upper or lower case and won't mix cases.  For
+example an encoder would encode the binary `10101011` as either `AB` (upper case) or `ab` (lower case), but not `Ab`
+(mixed case) or `aB` (mixed case).  We can use this tuning to ensure that our strings only contain letters of the same
+case to further discriminate string membership.
 
 ### Base64
 
