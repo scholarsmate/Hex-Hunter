@@ -105,8 +105,6 @@ Special processing is performed if fewer than 24 bits are available at the end o
 
 3.	The final quantum of encoding input is exactly 16 bits; here, the final unit of encoded output will be three characters followed by one "=" padding character.
 
-https://datatracker.ietf.org/doc/html/rfc4648#section-4
-
 #### Variations
 
 1. **URL-Safe** - encode into an URL- and filename- friendly Base64 variant (RFC 4648 / Base64URL) where the `+` and `/`
