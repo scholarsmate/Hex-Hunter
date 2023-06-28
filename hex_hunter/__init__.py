@@ -4,9 +4,12 @@ hex_hunter module
 from contextlib import contextmanager
 import secrets
 import sys
+from typing import Optional, BinaryIO, TextIO, Union
+
+from fastcrc import crc16 as fast_crc16
 
 __all__ = [
-    "crc16",
+    "crc16_xmodem",
     "gen_random_data",
     "verify_data",
     "is_hex_char",
@@ -20,7 +23,7 @@ CSUM_ENDIANESS = sys.byteorder
 
 
 @contextmanager
-def smart_open(filename, mode="rb"):
+def smart_open(filename, mode="rb") -> Union[BinaryIO, TextIO]:
     """opens the given filename, if "-" will be stdin or stdout depending on the mode"""
     if filename == "-":
         if mode is None or mode == "" or "r" in mode:
@@ -41,61 +44,20 @@ def smart_open(filename, mode="rb"):
             file_handle.close()
 
 
-def crc16(data: bytes, offset: int, length: int, initial_value: int = 0xFFFF):
+def crc16_xmodem(data: bytes, initial_value: Optional[int] = None) -> int:
     """crc16 generates a 2-byte checksum"""
-    if (
-        data is None
-        or offset < 0
-        or offset > (len(data) - 1)
-        or (offset + length) > len(data)
-    ):
-        raise ValueError
-    crc = initial_value
-    for i in range(0, length):
-        crc ^= data[offset + i] << 8
-        for _ in range(0, 8):
-            if (crc & 0x8000) > 0:
-                crc = (crc << 1) ^ 0x1021
-            else:
-                crc = crc << 1
-    return crc & 0xFFFF
-
-
-def crc8_atm(data: bytes, offset: int, length: int, initial_value: int = 0) -> int:
-    """crc8_atm generates a 1-byte checksum"""
-    if (
-        data is None
-        or offset < 0
-        or offset > (len(data) - 1)
-        or (offset + length) > len(data)
-    ):
-        raise ValueError
-    crc = initial_value
-    # Iterate bytes in data
-    for i in range(0, length):
-        byte = data[offset + i]
-        # Iterate bits in byte
-        for _ in range(0, 8):
-            if (crc >> 7) ^ (byte & 0x01):
-                crc = ((crc << 1) ^ 0x07) & 0xFF
-            else:
-                crc = (crc << 1) & 0xFF
-            # Shift to next bit
-            byte = byte >> 1
-    return crc
+    return fast_crc16.xmodem(data, initial=initial_value)
 
 
 def gen_random_data(nbytes: int) -> bytes:
     """generate a random byte-string containing the given number of bytes, plus 2 (for checksum)"""
-    data: bytes = secrets.token_bytes(nbytes)
-    checksum = crc16(data, 0, len(data)).to_bytes(2, CSUM_ENDIANESS)
-    data += checksum
-    return data
+    data = secrets.token_bytes(nbytes)
+    return data + crc16_xmodem(data).to_bytes(2, CSUM_ENDIANESS)
 
 
-def verify_data(data: bytes):
+def verify_data(data: bytes) -> bool:
     """verify data created by gen_random_data"""
-    return data[-2:] == crc16(data[:-2], 0, len(data) - 2).to_bytes(2, CSUM_ENDIANESS)
+    return data[-2:] == crc16_xmodem(data[:-2]).to_bytes(2, CSUM_ENDIANESS)
 
 
 def is_hex_char(byte: bytes) -> bool:

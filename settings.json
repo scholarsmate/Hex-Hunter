@@ -1,11 +1,11 @@
 {
     "random_sequence": {"length_min": 4, "length_max": 1024},
-    "random_encoded_sequence": {"length_min": 8, "length_max": 1024},
-    "num_encoded_sequences": 1000,
+    "random_encoded_sequence": {"length_min": 8, "length_max": 1024, "num_sequences": 1000},
+    "encoded_sequence": {"source_directory":  "test/data", "num_sequences": 20},
     "answer_filename": "answer_key",
     "output_filename": "test_data",
 
     "threshold": 10,
-    "encoding": "base64",
+    "encoding": "random",
     "input_filename": "test_data"
 }
