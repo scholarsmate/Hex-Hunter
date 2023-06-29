@@ -36,115 +36,77 @@ specified in the configuration.
 The code is intended to be run as a script. When it's run, it calls the `main` function.
 """
 
-import base64
-import binascii
-import json
-import sys
-from typing import IO
 
-import hex_hunter
-
-
-def validate_hex_string(encoded_string: bytes, threshold: int) -> bool:
-    """return True if the given hex string is a valid find and False otherwise"""
-    while len(encoded_string) >= threshold:
-        try:
-            if hex_hunter.verify_data(bytes.fromhex(encoded_string.decode("utf-8"))):
-                return True
-            break
-        except ValueError:
-            encoded_string = encoded_string[:-1]
-            continue
-    return False
+from json import load
+from typing import Iterator
+from base64 import (
+    b16decode,
+    b32decode,
+    b64decode,
+    b85decode,
+)
+from hex_hunter import (
+    BASE_16_BYTES_MC,
+    BASE_32_BYTES_MC,
+    BASE_64_BYTES,
+    BASE_85_BYTES,
+    find_encoded_data,
+    smart_open,
+)
 
 
-def validate_base64_string(encoded_string: bytes, threshold: int) -> bool:
-    """return True if the given base64 string is a valid find and False otherwise"""
-    while len(encoded_string) >= threshold:
-        try:
-            decoded = base64.decodebytes(encoded_string)
-            if hex_hunter.verify_data(decoded):
-                return True
-            print(f"FAILED: {encoded_string.decode('utf-8')}")
-            break
-        except binascii.Error:
-            encoded_string = (
-                encoded_string[1:]
-                if encoded_string.endswith("=".encode("utf-8"))
-                else encoded_string[:-1]
-            )
-            continue
-    return False
+def b16decode_casefold(encoded: bytes) -> bytes:
+    """decode base16 (hex) encoded data with case folding"""
+    return b16decode(encoded, True)
 
 
-def find_hex_encoded_data(config: dict, input_file: IO) -> int:
-    """find hex encoded data"""
-    found = 0
-    encoded_string = bytearray()
-    while True:
-        read_buffer = input_file.read(1024 * 8)
-        if not read_buffer:
-            break
-        for byte in read_buffer:
-            byte = byte.to_bytes(
-                1, sys.byteorder
-            )  # byte order doesn't matter for 1 byte
-            if hex_hunter.is_hex_char_lower(byte):
-                encoded_string += byte
-                continue
-            if validate_hex_string(encoded_string, config["threshold"]):
-                found += 1
-                print(f'data[{found}]: {encoded_string.decode("utf-8")}')
-            encoded_string.clear()
-    if validate_hex_string(encoded_string, config["threshold"]):
-        found += 1
-        print(f'data[{found}]: {encoded_string.decode("utf-8")}')
-    return 0
+def b32decode_casefold(encoded: bytes) -> bytes:
+    """decode base32 encoded data with case folding"""
+    return b32decode(encoded, True)
 
 
-def find_base64_encoded_data(config: dict, input_file: IO) -> int:
-    """find base64 encoded data"""
-    found = 0
-    encoded_string = bytearray()
-
-    while True:
-        read_buffer = input_file.read(1024 * 8)
-        if not read_buffer:
-            break
-        for byte in read_buffer:
-            byte = byte.to_bytes(
-                1, sys.byteorder
-            )  # byte order doesn't matter for 1 byte
-            if hex_hunter.is_base64_char(byte):
-                encoded_string += byte
-                continue
-            if validate_base64_string(bytes(encoded_string), config["threshold"]):
-                found += 1
-                print(f'data[{found}]: {encoded_string.decode("utf-8")}')
-            encoded_string.clear()
-    if validate_base64_string(encoded_string, config["threshold"]):
-        found += 1
-        print(f'data[{found}]: {encoded_string.decode("utf-8")}')
-    return 0
+def correct_base64_error(encoded: bytes) -> bytes:
+    return encoded[1:] if encoded.endswith("=".encode("utf-8")) else encoded[:-1]
 
 
-def detect_encoded_data(config: dict):
+def detect_encoded_data(config: dict) -> Iterator[tuple[str, int, bytes]]:
     """detect encoded data"""
-    with hex_hunter.smart_open(config["input_filename"], "rb") as input_file:
-        if config["encoding"] == "hex":
-            return find_hex_encoded_data(config, input_file)
-        if config["encoding"] == "base64":
-            return find_base64_encoded_data(config, input_file)
-        return find_hex_encoded_data(config, input_file) + find_base64_encoded_data(
-            config, input_file
-        )
+    encodings = {
+        "base16": (BASE_16_BYTES_MC, b16decode_casefold, None),
+        "base32": (BASE_32_BYTES_MC, b32decode_casefold, None),
+        "base64": (BASE_64_BYTES, b64decode, correct_base64_error),
+        "base85": (BASE_85_BYTES, b85decode, None),
+    }
+
+    for encoding, (
+        valid_byte_set,
+        validator_function,
+        error_correction,
+    ) in encodings.items():
+        if (
+            "encoding" not in config
+            or config["encoding"] == "all"
+            or config["encoding"] == encoding
+        ):
+            with smart_open(config["input_filename"], "rb") as input_file:
+                for offset, data in find_encoded_data(
+                    input_file,
+                    config["threshold"],
+                    valid_byte_set,
+                    validator_function,
+                    error_correction,
+                ):
+                    yield encoding, offset, data
 
 
 def main():
     """main"""
     with open("settings.json", "r", encoding="utf-8") as config_file:
-        config = json.load(config_file)
-        sys.exit(detect_encoded_data(config))
+        config = load(config_file)
+        for encoding, offset, data in detect_encoded_data(config):
+            print(
+                f'encoding: {encoding}, offset: {offset}, length: {len(data)}, data: {data.decode("utf-8")}'
+            )
 
 
 if __name__ == "__main__":

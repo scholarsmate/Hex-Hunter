@@ -6,6 +6,6 @@
     "output_filename": "test_data",
 
     "threshold": 10,
-    "encoding": "random",
+    "encoding": "all",
     "input_filename": "test_data"
 }

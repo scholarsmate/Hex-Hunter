@@ -1,25 +1,68 @@
 """
 hex_hunter module
 """
+import binascii
 from contextlib import contextmanager
 import secrets
 import sys
-from typing import Optional, BinaryIO, TextIO, Union
+import logging
+from typing import Optional, BinaryIO, TextIO, Union, Iterator, IO, Callable
 
 from fastcrc import crc16 as fast_crc16
 
 __all__ = [
+    "BASE_16_CHARS_UC",
+    "BASE_16_BYTES_UC",
+    "BASE_16_BYTES_LC",
+    "BASE_16_BYTES_MC",
+    "BASE_32_CHARS_UC",
+    "BASE_32_BYTES_UC",
+    "BASE_32_BYTES_LC",
+    "BASE_32_BYTES_MC",
+    "BASE_64_CHARS",
+    "BASE_64_BYTES",
+    "BASE_64_URL_CHARS",
+    "BASE_64_URL_BYTES",
+    "BASE_85_CHARS",
+    "BASE_85_BYTES",
     "crc16_xmodem",
     "gen_random_data",
     "verify_data",
-    "is_hex_char",
-    "is_hex_char_upper",
-    "is_hex_char_lower",
-    "is_base64_char",
-    "encode_hex",
+    "smart_open",
+    "validate_encoded",
+    "find_encoded_data",
 ]
 
 CSUM_ENDIANESS = sys.byteorder
+
+#                   0000000001111111
+#                   1234567890123456
+BASE_16_CHARS_UC = "0123456789ABCDEF"
+BASE_16_BYTES_UC = set(BASE_16_CHARS_UC.encode("utf-8"))
+BASE_16_BYTES_LC = set(BASE_16_CHARS_UC.lower().encode("utf-8"))
+BASE_16_BYTES_MC = BASE_16_BYTES_UC | BASE_16_BYTES_LC
+
+#                   00000000011111111112222222222333
+#                   12345678901234567890123456789012
+BASE_32_CHARS_UC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+BASE_32_BYTES_UC = set(BASE_32_CHARS_UC.encode("utf-8"))
+BASE_32_BYTES_LC = set(BASE_32_CHARS_UC.lower().encode("utf-8"))
+BASE_32_BYTES_MC = BASE_32_BYTES_UC | BASE_32_BYTES_LC
+
+#                00000000011111111112222222222333333333344444444445555555555666666
+#                12345678901234567890123456789012345678901234567890123456789012345
+BASE_64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+BASE_64_BYTES = set(BASE_64_CHARS.encode("utf-8"))
+
+#                    0000000001111111111222222222233333333334444444444555555555566666
+#                    1234567890123456789012345678901234567890123456789012345678901234
+BASE_64_URL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+BASE_64_URL_BYTES = set(BASE_64_URL_CHARS.encode("utf-8"))
+
+#                0000000001111111111222222222233333333334444444444555555555566666666667777777777888888
+#                1234567890123456789012345678901234567890123456789012345678901234567890123456789012345
+BASE_85_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
+BASE_85_BYTES = set(BASE_85_CHARS.encode("utf-8"))
 
 
 @contextmanager
@@ -56,37 +99,60 @@ def gen_random_data(nbytes: int) -> bytes:
 
 
 def verify_data(data: bytes) -> bool:
-    """verify data created by gen_random_data"""
+    """verify data created by generate_data"""
     return data[-2:] == crc16_xmodem(data[:-2]).to_bytes(2, CSUM_ENDIANESS)
 
 
-def is_hex_char(byte: bytes) -> bool:
-    """return True if the given byte is a hex character"""
-    return byte in "0123456789abcdefABCDEF".encode("utf-8")
+def validate_encoded(
+    encoded_string: bytes,
+    threshold: int,
+    decode_func: Callable[[bytes], bytes],
+    error_correction: Optional[Callable[[bytes], bytes]] = None,
+) -> bool:
+    """return True if the given baseXX string is a valid find and False otherwise"""
+    while len(encoded_string) >= threshold:
+        try:
+            decoded: bytes = decode_func(encoded_string)
+            if verify_data(decoded):
+                return True
+            logging.debug("FAILED: %s", encoded_string.decode("utf-8"))
+            break
+        except ValueError:
+            if error_correction:
+                encoded_string = error_correction(encoded_string)
+            else:
+                encoded_string = encoded_string[:-1]
+            continue
+    return False
 
 
-def is_hex_char_upper(byte: bytes) -> bool:
-    """return True if the given byte is an uppercase hex character"""
-    return byte in "0123456789ABCDEF".encode("utf-8")
-
-
-def is_hex_char_lower(byte: bytes) -> bool:
-    """return True if the given byte is a lowercase hex character"""
-    return byte in "0123456789abcdef".encode("utf-8")
-
-
-def is_base64_char(byte: bytes) -> bool:
-    """return True if the given byte is a base64 character"""
-    return (
-        byte
-        #   00000000011111111112222222222333333333344444444445555555555666666
-        #   12345678901234567890123456789012345678901234567890123456789012345
-        in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=".encode(
-            "utf-8"
-        )
-    )
-
-
-def encode_hex(byte: bytes) -> bytes:
-    """return hex encoded version of the given bytes"""
-    return byte.hex().encode("utf-8")
+def find_encoded_data(
+    input_file: IO,
+    threshold: int,
+    valid_byte_set: set[int],
+    decode_func: Callable[[bytes], bytes],
+    error_correction: Optional[Callable[[bytes], bytes]] = None,
+) -> Iterator[tuple[int, bytearray]]:
+    """Yield encoded data as they are found."""
+    encoded_bytes = bytearray()
+    file_offset = -1
+    found_data_offset = -1
+    while True:
+        read_buffer = input_file.read(1024 * 8)
+        if not read_buffer:
+            break
+        for byte in read_buffer:
+            file_offset += 1
+            if byte in valid_byte_set:
+                if found_data_offset == -1:
+                    found_data_offset = file_offset
+                encoded_bytes += byte.to_bytes(1, sys.byteorder)
+                continue
+            if validate_encoded(
+                encoded_bytes, threshold, decode_func, error_correction
+            ):
+                yield found_data_offset, encoded_bytes
+            encoded_bytes.clear()
+            found_data_offset = -1
+    if validate_encoded(encoded_bytes, threshold, decode_func, error_correction):
+        yield found_data_offset, encoded_bytes
